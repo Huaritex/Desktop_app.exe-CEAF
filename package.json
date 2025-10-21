@@ -1,0 +1,105 @@
+{
+  "name": "ceaf-dashboard-desktop",
+  "productName": "CEAF Dashboard UCB",
+  "version": "1.0.0",
+  "description": "CEAF Dashboard UCB Desktop Edition - Sistema de gestión académica de alto rendimiento",
+  "author": {
+    "name": "Universidad Católica Boliviana",
+    "email": "soporte@ucb.edu.bo"
+  },
+  "license": "MIT",
+  "main": "dist-electron/main.js",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "tsc && vite build && electron-builder",
+    "build:win": "tsc && vite build && electron-builder --win",
+    "build:dir": "tsc && vite build && electron-builder --dir",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3",
+    "@supabase/supabase-js": "^2.56.0",
+    "@tailwindcss/forms": "^0.5.7",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "d3": "^7.9.0",
+    "date-fns": "^4.1.0",
+    "electron-updater": "^6.3.9",
+    "framer-motion": "^10.16.4",
+    "lucide-react": "^0.484.0",
+    "papaparse": "^5.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-helmet": "^6.1.0",
+    "react-hook-form": "^7.55.0",
+    "react-router-dom": "^6.28.0",
+    "tailwind-merge": "^2.8.0",
+    "uuid": "^10.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^18.2.43",
+    "@types/react-beautiful-dnd": "^13.1.8",
+    "@types/react-dom": "^18.2.17",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "electron": "^32.2.7",
+    "electron-builder": "^25.1.8",
+    "eslint": "^8.55.0",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vite-plugin-electron": "^0.28.7",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.ucb.ceaf-dashboard",
+    "productName": "CEAF Dashboard UCB",
+    "copyright": "Copyright © 2025 Universidad Católica Boliviana",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/icon.png",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CEAF Dashboard UCB",
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico"
+    },
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "Huaritex",
+      "repo": "CEAF-Dashboard-UCB"
+    }
+  }
+}
