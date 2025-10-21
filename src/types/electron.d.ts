@@ -26,13 +26,13 @@ export interface ImportResult {
 
 export interface DashboardDataParams {
   tableName: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   select?: string;
 }
 
 export interface DashboardDataResult {
   success: boolean;
-  data: any[] | null;
+  data: unknown[] | null;
   message?: string;
 }
 
@@ -68,14 +68,14 @@ declare global {
       // File operations
       openFile: () => Promise<{ success: boolean; data?: FileData; message?: string }>;
       importData: (params: ImportParams) => Promise<ImportResult>;
-      
+
       // Database operations
       fetchDashboardData: (params: DashboardDataParams) => Promise<DashboardDataResult>;
       checkConnectivity: () => Promise<ConnectivityResult>;
-      
+
       // App info
       getAppInfo: () => Promise<AppInfo>;
-      
+
       // Update system
       downloadUpdate: () => Promise<{ success: boolean; message?: string }>;
       installUpdate: () => Promise<void>;
@@ -83,6 +83,18 @@ declare global {
       onUpdateNotAvailable: (callback: () => void) => () => void;
       onDownloadProgress: (callback: (progress: DownloadProgress) => void) => () => void;
       onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => () => void;
+
+      // Horarios
+      crearAsignacion: (asignacion: unknown) => Promise<unknown>;
+      actualizarAsignacion: (params: unknown) => Promise<unknown>;
+      eliminarAsignacion: (params: unknown) => Promise<unknown>;
+      validarAsignacion: (asignacion: unknown) => Promise<unknown>;
+      validarCargaHoraria: (params: unknown) => Promise<unknown>;
+      replicarAsignacion: (asignacion: unknown) => Promise<unknown>;
+      obtenerAsignaciones: (filtros: unknown) => Promise<unknown>;
+      obtenerCargaDocente: (params: unknown) => Promise<unknown>;
+      obtenerConflictosPendientes: () => Promise<unknown>;
+      resolverConflicto: (params: unknown) => Promise<unknown>;
     };
   }
 }

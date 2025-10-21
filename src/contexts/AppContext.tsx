@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode
+} from 'react';
 
 interface AppContextType {
   isOnline: boolean;
@@ -11,7 +18,9 @@ interface AppContextType {
     semester: string;
     department: string;
   };
-  setGlobalFilters: (filters: Partial<AppContextType['globalFilters']>) => void;
+  setGlobalFilters: (
+    filters: Partial<AppContextType['globalFilters']>
+  ) => void;
   checkConnectivity: () => Promise<void>;
   updateAvailable: boolean;
   setUpdateAvailable: (available: boolean) => void;
@@ -19,7 +28,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: ReactNode }> = ({
+  children
+}) => {
   const [isOnline, setIsOnline] = useState(true);
   const [appInfo, setAppInfo] = useState<AppContextType['appInfo']>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -28,7 +39,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     department: ''
   });
 
-  // Verificar conectividad
   const checkConnectivity = useCallback(async () => {
     try {
       const result = await window.api.checkConnectivity();
@@ -39,7 +49,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Obtener información de la aplicación
   useEffect(() => {
     const fetchAppInfo = async () => {
       try {
@@ -49,29 +58,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Error fetching app info:', error);
       }
     };
-
     fetchAppInfo();
   }, []);
 
-  // Verificar conectividad periódicamente
   useEffect(() => {
-    checkConnectivity();
-    const interval = setInterval(checkConnectivity, 30000); // Cada 30 segundos
-    return () => clearInterval(interval);
+    let isMounted = true;
+    const performInitialCheck = async () => {
+      if (isMounted) {
+        await checkConnectivity();
+      }
+    };
+    performInitialCheck();
+    const intervalId = setInterval(() => {
+      if (isMounted) {
+        checkConnectivity();
+      }
+    }, 30000);
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [checkConnectivity]);
 
-  // Escuchar eventos de actualización
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      checkConnectivity();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkConnectivity]);
+
   useEffect(() => {
     const unsubscribe = window.api.onUpdateAvailable(() => {
       setUpdateAvailable(true);
     });
-
     return () => {
       unsubscribe();
     };
   }, []);
 
-  const setGlobalFilters = (filters: Partial<AppContextType['globalFilters']>) => {
+  const setGlobalFilters = (
+    filters: Partial<AppContextType['globalFilters']>
+  ) => {
     setGlobalFiltersState(prev => ({ ...prev, ...filters }));
   };
 
