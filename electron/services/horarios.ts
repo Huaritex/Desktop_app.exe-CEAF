@@ -1,14 +1,3 @@
-/**
- * Servicio de Gestión de Horarios
- * 
- * Este módulo contiene toda la lógica de negocio para la gestión
- * inteligente de horarios académicos, incluyendo:
- * - Validación de conflictos (docentes, aulas, paralelos)
- * - Replicación inteligente de asignaciones
- * - Validación de carga horaria
- * - Operaciones CRUD con reglas de negocio
- */
-
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseClient } from './database';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,9 +24,13 @@ export interface Asignacion {
 
 export interface ConflictoDetalle {
   error: boolean;
-  type: 'CONFLICTO_DOCENTE' | 'CONFLICTO_AULA' | 'CONFLICTO_PARALELO' | 'CARGA_HORARIA_INVALIDA';
+  type:
+    | 'CONFLICTO_DOCENTE'
+    | 'CONFLICTO_AULA'
+    | 'CONFLICTO_PARALELO'
+    | 'CARGA_HORARIA_INVALIDA';
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 export interface ResultadoValidacion {
@@ -88,7 +81,7 @@ export async function validarAsignacion(
         error: true,
         type: 'CONFLICTO_DOCENTE',
         message: 'El docente ya tiene clases asignadas en este horario',
-        details: conflictoDocente.asignaciones_conflicto,
+        details: conflictoDocente.asignaciones_conflicto
       });
     }
 
@@ -108,7 +101,7 @@ export async function validarAsignacion(
         error: true,
         type: 'CONFLICTO_AULA',
         message: 'El aula ya está ocupada en este horario',
-        details: conflictoAula.asignaciones_conflicto,
+        details: conflictoAula.asignaciones_conflicto
       });
     }
 
@@ -129,13 +122,13 @@ export async function validarAsignacion(
         error: true,
         type: 'CONFLICTO_PARALELO',
         message: 'El paralelo ya tiene otra materia asignada en este horario',
-        details: conflictoParalelo.asignaciones_conflicto,
+        details: conflictoParalelo.asignaciones_conflicto
       });
     }
 
     return {
       valido: conflictos.length === 0,
-      conflictos,
+      conflictos
     };
   } catch (error) {
     console.error('Error en validación de asignación:', error);
@@ -154,21 +147,21 @@ async function validarConflictoDocente(
   hora_fin: string,
   gestion: string,
   asignacion_id?: number
-): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: any }> {
+): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: unknown }> {
   const { data, error } = await supabase.rpc('validar_conflicto_docente', {
     p_docente_id: docente_id,
     p_dia_semana: dia_semana,
     p_hora_inicio: hora_inicio,
     p_hora_fin: hora_fin,
     p_gestion: gestion,
-    p_asignacion_id: asignacion_id || null,
+    p_asignacion_id: asignacion_id || null
   });
 
   if (error) throw error;
 
   return {
     tiene_conflicto: data[0]?.tiene_conflicto || false,
-    asignaciones_conflicto: data[0]?.asignaciones_conflicto || null,
+    asignaciones_conflicto: data[0]?.asignaciones_conflicto || null
   };
 }
 
@@ -183,21 +176,21 @@ async function validarConflictoAula(
   hora_fin: string,
   gestion: string,
   asignacion_id?: number
-): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: any }> {
+): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: unknown }> {
   const { data, error } = await supabase.rpc('validar_conflicto_aula', {
     p_aula_id: aula_id,
     p_dia_semana: dia_semana,
     p_hora_inicio: hora_inicio,
     p_hora_fin: hora_fin,
     p_gestion: gestion,
-    p_asignacion_id: asignacion_id || null,
+    p_asignacion_id: asignacion_id || null
   });
 
   if (error) throw error;
 
   return {
     tiene_conflicto: data[0]?.tiene_conflicto || false,
-    asignaciones_conflicto: data[0]?.asignaciones_conflicto || null,
+    asignaciones_conflicto: data[0]?.asignaciones_conflicto || null
   };
 }
 
@@ -213,7 +206,7 @@ async function validarConflictoParalelo(
   hora_fin: string,
   gestion: string,
   asignacion_id?: number
-): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: any }> {
+): Promise<{ tiene_conflicto: boolean; asignaciones_conflicto: unknown }> {
   // Obtener el pensum_id de la materia actual
   const { data: pensumMateria, error: errorPensum } = await supabase
     .from('pensum_materias')
@@ -227,7 +220,8 @@ async function validarConflictoParalelo(
   // que se solapen en el horario
   const { data, error } = await supabase
     .from('asignaciones')
-    .select(`
+    .select(
+      `
       id,
       paralelo,
       dia_semana,
@@ -241,7 +235,8 @@ async function validarConflictoParalelo(
           nombre
         )
       )
-    `)
+    `
+    )
     .eq('pensum_materias.pensum_id', pensumMateria.pensum_id)
     .eq('pensum_materias.semestre', pensumMateria.semestre)
     .eq('paralelo', paralelo)
@@ -252,18 +247,20 @@ async function validarConflictoParalelo(
   if (error) throw error;
 
   // Filtrar los que se solapan en horario
-  const conflictos = data?.filter((a: any) => {
-    return (
-      (hora_inicio >= a.hora_inicio && hora_inicio < a.hora_fin) ||
-      (hora_fin > a.hora_inicio && hora_fin <= a.hora_fin) ||
-      (hora_inicio <= a.hora_inicio && hora_fin >= a.hora_fin)
-    );
-  });
+  const conflictos = data?.filter(
+    (a: { hora_inicio: string; hora_fin: string }) => {
+      return (
+        (hora_inicio >= a.hora_inicio && hora_inicio < a.hora_fin) ||
+        (hora_fin > a.hora_inicio && hora_fin <= a.hora_fin) ||
+        (hora_inicio <= a.hora_inicio && hora_fin >= a.hora_fin)
+      );
+    }
+  );
 
   return {
     tiene_conflicto: conflictos && conflictos.length > 0,
     asignaciones_conflicto:
-      conflictos && conflictos.length > 0 ? conflictos : null,
+      conflictos && conflictos.length > 0 ? conflictos : null
   };
 }
 
@@ -286,7 +283,7 @@ export async function validarCargaHoraria(
   const { data, error } = await supabase.rpc('validar_carga_horaria_materia', {
     p_pensum_materia_id: pensum_materia_id,
     p_paralelo: paralelo,
-    p_gestion: gestion,
+    p_gestion: gestion
   });
 
   if (error) throw error;
@@ -303,7 +300,7 @@ export async function validarCargaHoraria(
  */
 export async function crearAsignacion(
   asignacion: Asignacion
-): Promise<{ success: boolean; data?: any; error?: ConflictoDetalle }> {
+): Promise<{ success: boolean; data?: unknown; error?: ConflictoDetalle }> {
   const supabase = getSupabaseClient();
 
   try {
@@ -316,7 +313,7 @@ export async function crearAsignacion(
 
       return {
         success: false,
-        error: validacion.conflictos[0],
+        error: validacion.conflictos[0]
       };
     }
 
@@ -336,7 +333,7 @@ export async function crearAsignacion(
 
     return {
       success: true,
-      data,
+      data
     };
   } catch (error) {
     console.error('Error al crear asignación:', error);
@@ -351,7 +348,7 @@ export async function actualizarAsignacion(
   asignacion_id: number,
   cambios: Partial<Asignacion>,
   aplicar_a_serie: boolean = false
-): Promise<{ success: boolean; data?: any; error?: ConflictoDetalle }> {
+): Promise<{ success: boolean; data?: unknown; error?: ConflictoDetalle }> {
   const supabase = getSupabaseClient();
 
   try {
@@ -375,7 +372,7 @@ export async function actualizarAsignacion(
 
       return {
         success: false,
-        error: validacion.conflictos[0],
+        error: validacion.conflictos[0]
       };
     }
 
@@ -392,7 +389,7 @@ export async function actualizarAsignacion(
 
       return {
         success: true,
-        data,
+        data
       };
     } else {
       // Actualizar solo esta asignación
@@ -407,7 +404,7 @@ export async function actualizarAsignacion(
 
       return {
         success: true,
-        data,
+        data
       };
     }
   } catch (error) {
@@ -447,7 +444,7 @@ export async function eliminarAsignacion(
 
         return {
           success: true,
-          eliminadas: 1, // Devolver count si es necesario
+          eliminadas: 1 // Devolver count si es necesario
         };
       }
     }
@@ -462,7 +459,7 @@ export async function eliminarAsignacion(
 
     return {
       success: true,
-      eliminadas: 1,
+      eliminadas: 1
     };
   } catch (error) {
     console.error('Error al eliminar asignación:', error);
@@ -486,7 +483,8 @@ export async function replicarAsignacion(
     // 1. Obtener la materia de la asignación base
     const { data: pensumMateria, error: errorPM } = await supabase
       .from('pensum_materias')
-      .select(`
+      .select(
+        `
         materia_sigla,
         semestre,
         pensums (
@@ -496,7 +494,8 @@ export async function replicarAsignacion(
             nombre
           )
         )
-      `)
+      `
+      )
       .eq('id', asignacion_base.pensum_materia_id)
       .single();
 
@@ -518,9 +517,11 @@ export async function replicarAsignacion(
     for (const equiv of equivalencias || []) {
       try {
         // Buscar la materia en el pensum destino con el mismo semestre
-        const { data: pensumMateriaDestino, error: errorDest } = await supabase
-          .from('pensum_materias')
-          .select(`
+        const { data: pensumMateriaDestino, error: errorDest } =
+          await supabase
+            .from('pensum_materias')
+            .select(
+              `
             id,
             pensums (
               nombre,
@@ -528,18 +529,19 @@ export async function replicarAsignacion(
                 nombre
               )
             )
-          `)
-          .eq('pensum_id', equiv.pensum_id)
-          .eq('materia_sigla', equiv.sigla_canonica)
-          .eq('semestre', pensumMateria.semestre)
-          .single();
+          `
+            )
+            .eq('pensum_id', equiv.pensum_id)
+            .eq('materia_sigla', equiv.sigla_canonica)
+            .eq('semestre', pensumMateria.semestre)
+            .single();
 
         if (errorDest) {
           resultados.push({
             carrera: 'Desconocida',
             pensum: 'Desconocido',
             exito: false,
-            error: 'No se encontró materia equivalente en el pensum destino',
+            error: 'No se encontró materia equivalente en el pensum destino'
           });
           fallidas++;
           continue;
@@ -549,7 +551,7 @@ export async function replicarAsignacion(
         const asignacionReplicada: Asignacion = {
           ...asignacion_base,
           pensum_materia_id: pensumMateriaDestino.id,
-          serie_id: asignacion_base.serie_id || uuidv4(), // Usar mismo serie_id
+          serie_id: asignacion_base.serie_id || uuidv4() // Usar mismo serie_id
         };
 
         const resultado = await crearAsignacion(asignacionReplicada);
@@ -557,17 +559,17 @@ export async function replicarAsignacion(
         if (resultado.success) {
           exitosas++;
           resultados.push({
-            carrera: pensumMateriaDestino.pensums.carreras.nombre,
-            pensum: pensumMateriaDestino.pensums.nombre,
-            exito: true,
+            carrera: pensumMateriaDestino.pensums[0].carreras[0].nombre,
+            pensum: pensumMateriaDestino.pensums[0].nombre,
+            exito: true
           });
         } else {
           fallidas++;
           resultados.push({
-            carrera: pensumMateriaDestino.pensums.carreras.nombre,
-            pensum: pensumMateriaDestino.pensums.nombre,
+            carrera: pensumMateriaDestino.pensums[0].carreras[0].nombre,
+            pensum: pensumMateriaDestino.pensums[0].nombre,
             exito: false,
-            error: resultado.error?.message || 'Error desconocido',
+            error: resultado.error?.message || 'Error desconocido'
           });
         }
       } catch (error) {
@@ -576,7 +578,7 @@ export async function replicarAsignacion(
           carrera: 'Desconocida',
           pensum: 'Desconocido',
           exito: false,
-          error: error instanceof Error ? error.message : 'Error desconocido',
+          error: error instanceof Error ? error.message : 'Error desconocido'
         });
       }
     }
@@ -585,7 +587,7 @@ export async function replicarAsignacion(
       exitoso: fallidas === 0,
       asignaciones_creadas: exitosas,
       asignaciones_fallidas: fallidas,
-      detalles: resultados,
+      detalles: resultados
     };
   } catch (error) {
     console.error('Error en replicación inteligente:', error);
@@ -612,7 +614,7 @@ async function registrarConflicto(
       asignacion_id,
       descripcion: conflicto.message,
       detalles: conflicto.details,
-      resuelto: false,
+      resuelto: false
     });
   } catch (error) {
     console.error('Error al registrar conflicto:', error);
@@ -635,7 +637,7 @@ export async function obtenerAsignaciones(filtros: {
   docente_id?: number;
   aula_id?: number;
   dia_semana?: number;
-}): Promise<any[]> {
+}): Promise<unknown[]> {
   const supabase = getSupabaseClient();
 
   let query = supabase
@@ -668,7 +670,7 @@ export async function obtenerAsignaciones(filtros: {
 export async function obtenerCargaDocente(
   docente_id: number,
   gestion: string
-): Promise<any> {
+): Promise<unknown> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -686,7 +688,7 @@ export async function obtenerCargaDocente(
 /**
  * Obtiene conflictos sin resolver
  */
-export async function obtenerConflictosPendientes(): Promise<any[]> {
+export async function obtenerConflictosPendientes(): Promise<unknown[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -714,7 +716,19 @@ export async function resolverConflicto(
     .update({
       resuelto: true,
       fecha_resolucion: new Date().toISOString(),
-      resolucion_aplicada: resolucion,
+      resolucion_aplicada: resolucion
     })
     .eq('id', conflicto_id);
+}
+
+// Define the 'details' property as optional and of type 'unknown'
+export interface ConflictoDetalle {
+  error: boolean;
+  type:
+    | 'CONFLICTO_DOCENTE'
+    | 'CONFLICTO_AULA'
+    | 'CONFLICTO_PARALELO'
+    | 'CARGA_HORARIA_INVALIDA';
+  message: string;
+  details?: unknown;
 }
