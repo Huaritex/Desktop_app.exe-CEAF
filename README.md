@@ -408,10 +408,6 @@ npm test
 npm run test:coverage
 ```
 
-## 📝 Licencia
-
-MIT License - Ver archivo LICENSE para más detalles
-
 ## 👥 Contribución
 
 1. Fork el proyecto
@@ -423,7 +419,7 @@ MIT License - Ver archivo LICENSE para más detalles
 ## 📧 Soporte
 
 Para soporte y consultas:
-- Email: soporte@ucb.edu.bo
+- Email: huaritex@gmail.com
 - GitHub Issues: [github.com/Huaritex/CEAF-Dashboard-UCB/issues](https://github.com/Huaritex/CEAF-Dashboard-UCB/issues)
 
 ## 🗺️ Roadmap
@@ -446,4 +442,4 @@ Para soporte y consultas:
 
 ---
 
-**Desarrollado con ❤️ para la Universidad Católica Boliviana**
+**Desarrollado por Huaritex**
