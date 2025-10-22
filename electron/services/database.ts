@@ -1,6 +1,6 @@
 /**
  * Servicio de Base de Datos para Electron (Main Process)
- * 
+ *
  * IMPORTANTE: Este servicio SOLO debe ser utilizado en el Main Process.
  * Usa la SERVICE_KEY para operaciones administrativas.
  * Nunca expongas este módulo al Renderer Process.
@@ -30,8 +30,8 @@ export function initializeSupabase(): SupabaseClient {
   supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false,
-    },
+      persistSession: false
+    }
   });
 
   return supabaseAdmin;
@@ -71,9 +71,7 @@ export async function fetchDashboardData(filters?: {
     if (studentsError) throw studentsError;
 
     // Obtener conteo de docentes
-    let facultyQuery = supabase
-      .from('faculty')
-      .select('*', { count: 'exact' });
+    let facultyQuery = supabase.from('faculty').select('*', { count: 'exact' });
 
     if (filters?.department) {
       facultyQuery = facultyQuery.eq('department', filters.department);
@@ -97,9 +95,7 @@ export async function fetchDashboardData(filters?: {
     if (programsError) throw programsError;
 
     // Obtener rendimiento académico
-    let performanceQuery = supabase
-      .from('academic_performance')
-      .select('*');
+    let performanceQuery = supabase.from('academic_performance').select('*');
 
     if (filters?.semester) {
       performanceQuery = performanceQuery.eq('semester', filters.semester);
@@ -112,7 +108,10 @@ export async function fetchDashboardData(filters?: {
 
     // Calcular GPA promedio
     const avgGPA =
-      performanceData?.reduce((sum, item) => sum + (item.average_gpa || 0), 0) /
+      performanceData?.reduce(
+        (sum, item) => sum + (item.average_gpa || 0),
+        0
+      ) /
         (performanceData?.length || 1) || 0;
 
     return {
@@ -120,7 +119,7 @@ export async function fetchDashboardData(filters?: {
       totalFaculty: totalFaculty || 0,
       totalPrograms: totalPrograms || 0,
       averageGPA: avgGPA.toFixed(2),
-      performanceData: performanceData || [],
+      performanceData: performanceData || []
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -129,101 +128,76 @@ export async function fetchDashboardData(filters?: {
 }
 
 /**
- * Importa datos desde CSV/XLSX
+ * Importa datos desde un objeto de datos ya parseado
  * ADVERTENCIA: Esta operación es destructiva y reemplaza todos los datos
  */
 export async function importData(data: {
-  students?: any[];
-  faculty?: any[];
-  courses?: any[];
-  programs?: any[];
-  sections?: any[];
-  enrollments?: any[];
+  students?: unknown[];
+  faculty?: unknown[];
+  courses?: unknown[];
+  programs?: unknown[];
+  sections?: unknown[];
+  enrollments?: unknown[];
 }) {
   const supabase = getSupabaseClient();
+  const results = {
+    students: 0,
+    faculty: 0,
+    courses: 0,
+    programs: 0,
+    sections: 0,
+    enrollments: 0
+  };
 
   try {
-    const results = {
-      estudiantes: 0,
-      docentes: 0,
-      materias: 0,
-      carreras: 0,
-      asignaciones: 0,
-      inscripciones: 0,
-    };
-
-    // Importar carreras primero (es clave foránea)
     if (data.programs && data.programs.length > 0) {
-      // Eliminar datos existentes
-      await supabase.from('carreras').delete().neq('id', 0);
-      
-      // Insertar nuevos datos
-      const { error: programsError } = await supabase
-        .from('carreras')
+      await supabase.from('academic_programs').delete().neq('id', 0);
+      const { error } = await supabase
+        .from('academic_programs')
         .insert(data.programs);
-
-      if (programsError) throw programsError;
-      results.carreras = data.programs.length;
+      if (error) throw new Error(`Error importing programs: ${error.message}`);
+      results.programs = data.programs.length;
     }
 
-    // Importar estudiantes
     if (data.students && data.students.length > 0) {
-      await supabase.from('estudiantes').delete().neq('id', 0);
-      
-      const { error: studentsError } = await supabase
-        .from('estudiantes')
-        .insert(data.students);
-
-      if (studentsError) throw studentsError;
-      results.estudiantes = data.students.length;
+      await supabase.from('students').delete().neq('id', 0);
+      const { error } = await supabase.from('students').insert(data.students);
+      if (error) throw new Error(`Error importing students: ${error.message}`);
+      results.students = data.students.length;
     }
 
-    // Importar docentes
     if (data.faculty && data.faculty.length > 0) {
-      await supabase.from('docentes').delete().neq('id', 0);
-      
-      const { error: facultyError } = await supabase
-        .from('docentes')
-        .insert(data.faculty);
-
-      if (facultyError) throw facultyError;
-      results.docentes = data.faculty.length;
+      await supabase.from('faculty').delete().neq('id', 0);
+      const { error } = await supabase.from('faculty').insert(data.faculty);
+      if (error) throw new Error(`Error importing faculty: ${error.message}`);
+      results.faculty = data.faculty.length;
     }
 
-    // Importar materias
     if (data.courses && data.courses.length > 0) {
-      await supabase.from('materias').delete().neq('sigla', '');
-      
-      const { error: coursesError } = await supabase
-        .from('materias')
-        .insert(data.courses);
-
-      if (coursesError) throw coursesError;
-      results.materias = data.courses.length;
+      await supabase.from('courses').delete().neq('id', 0);
+      const { error } = await supabase.from('courses').insert(data.courses);
+      if (error) throw new Error(`Error importing courses: ${error.message}`);
+      results.courses = data.courses.length;
     }
 
-    // Importar asignaciones
     if (data.sections && data.sections.length > 0) {
-      await supabase.from('asignaciones').delete().neq('id', 0);
-      
-      const { error: sectionsError } = await supabase
-        .from('asignaciones')
+      await supabase.from('course_sections').delete().neq('id', 0);
+      const { error } = await supabase
+        .from('course_sections')
         .insert(data.sections);
-
-      if (sectionsError) throw sectionsError;
-      results.asignaciones = data.sections.length;
+      if (error)
+        throw new Error(`Error importing course_sections: ${error.message}`);
+      results.sections = data.sections.length;
     }
 
-    // Importar inscripciones
     if (data.enrollments && data.enrollments.length > 0) {
-      await supabase.from('inscripciones').delete().neq('id', 0);
-      
-      const { error: enrollmentsError} = await supabase
-        .from('inscripciones')
+      await supabase.from('enrollments').delete().neq('id', 0);
+      const { error } = await supabase
+        .from('enrollments')
         .insert(data.enrollments);
-
-      if (enrollmentsError) throw enrollmentsError;
-      results.inscripciones = data.enrollments.length;
+      if (error)
+        throw new Error(`Error importing enrollments: ${error.message}`);
+      results.enrollments = data.enrollments.length;
     }
 
     return results;
@@ -239,85 +213,13 @@ export async function importData(data: {
 export async function checkDatabaseConnectivity(): Promise<boolean> {
   try {
     const supabase = getSupabaseClient();
-    const { error } = await supabase.from('carreras').select('id').limit(1);
+    const { error } = await supabase
+      .from('academic_programs')
+      .select('id')
+      .limit(1);
     return !error;
   } catch (error) {
     console.error('Error checking connectivity:', error);
     return false;
   }
-}
-
-/**
- * Obtiene estudiantes con filtros opcionales
- */
-export async function getStudents(filters?: {
-  carrera?: string;
-  semestre?: string;
-  estado?: string;
-}) {
-  const supabase = getSupabaseClient();
-  
-  let query = supabase
-    .from('estudiantes')
-    .select('*, carreras(nombre, departamento)');
-
-  if (filters?.carrera) {
-    query = query.eq('carrera_id', filters.carrera);
-  }
-  
-  if (filters?.semestre) {
-    query = query.eq('semestre_actual', filters.semestre);
-  }
-  
-  if (filters?.estado) {
-    query = query.eq('estado', filters.estado);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  return data;
-}
-
-/**
- * Obtiene docentes con filtros opcionales
- */
-export async function getFaculty(filters?: {
-  departamento?: string;
-  especialidad?: string;
-}) {
-  const supabase = getSupabaseClient();
-  
-  let query = supabase.from('docentes').select('*');
-
-  if (filters?.departamento) {
-    query = query.eq('departamento', filters.departamento);
-  }
-  
-  if (filters?.especialidad) {
-    query = query.eq('especialidad', filters.especialidad);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  return data;
-}
-
-/**
- * Obtiene carreras (programas académicos)
- */
-export async function getAcademicPrograms(departamento?: string) {
-  const supabase = getSupabaseClient();
-  
-  let query = supabase.from('carreras').select('*');
-
-  if (departamento) {
-    query = query.eq('departamento', departamento);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  return data;
 }

@@ -11,7 +11,10 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Formatea un número como moneda
  */
-export function formatCurrency(amount: number, currency: string = 'BOB'): string {
+export function formatCurrency(
+  amount: number,
+  currency: string = 'BOB'
+): string {
   return new Intl.NumberFormat('es-BO', {
     style: 'currency',
     currency
@@ -28,21 +31,24 @@ export function formatNumber(num: number): string {
 /**
  * Formatea una fecha
  */
-export function formatDate(date: Date | string, format: 'short' | 'long' | 'relative' = 'short'): string {
+export function formatDate(
+  date: Date | string,
+  format: 'short' | 'long' | 'relative' = 'short'
+): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (format === 'relative') {
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Hoy';
     if (diffDays === 1) return 'Ayer';
     if (diffDays < 7) return `Hace ${diffDays} días`;
     if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
     return `Hace ${Math.floor(diffDays / 30)} meses`;
   }
-  
+
   return d.toLocaleDateString('es-BO', {
     year: 'numeric',
     month: format === 'long' ? 'long' : 'short',
@@ -73,7 +79,7 @@ export function stringToColor(str: string): string {
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const h = hash % 360;
   return `hsl(${h}, 65%, 50%)`;
 }
@@ -137,24 +143,31 @@ export function calculatePercentage(value: number, total: number): number {
  * Agrupa un array por una propiedad
  */
 export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((result, item) => {
-    const group = String(item[key]);
-    if (!result[group]) {
-      result[group] = [];
-    }
-    result[group].push(item);
-    return result;
-  }, {} as Record<string, T[]>);
+  return array.reduce(
+    (result, item) => {
+      const group = String(item[key]);
+      if (!result[group]) {
+        result[group] = [];
+      }
+      result[group].push(item);
+      return result;
+    },
+    {} as Record<string, T[]>
+  );
 }
 
 /**
  * Ordena un array de objetos por una propiedad
  */
-export function sortBy<T>(array: T[], key: keyof T, order: 'asc' | 'desc' = 'asc'): T[] {
+export function sortBy<T>(
+  array: T[],
+  key: keyof T,
+  order: 'asc' | 'desc' = 'asc'
+): T[] {
   return [...array].sort((a, b) => {
     const aVal = a[key];
     const bVal = b[key];
-    
+
     if (aVal < bVal) return order === 'asc' ? -1 : 1;
     if (aVal > bVal) return order === 'asc' ? 1 : -1;
     return 0;
@@ -164,18 +177,18 @@ export function sortBy<T>(array: T[], key: keyof T, order: 'asc' | 'desc' = 'asc
 /**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
-  
+
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
       timeout = null;
       func(...args);
     };
-    
+
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
@@ -184,17 +197,17 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
-  
+
   return function executedFunction(...args: Parameters<T>) {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 }
