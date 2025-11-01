@@ -1,14 +1,18 @@
 /**
- * Servicio de Base de Datos para Electron (Main Process)
+ * Servicio de Base de Datos SQLite para Electron (Main Process)
  *
  * IMPORTANTE: Este servicio SOLO debe ser utilizado en el Main Process.
- * Usa la SERVICE_KEY para operaciones administrativas.
+ * Gestiona la base de datos local SQLite.
  * Nunca expongas este módulo al Renderer Process.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import Database from 'better-sqlite3';
+import { app } from 'electron';
+import path from 'path';
+import fs from 'fs';
 
-let supabaseAdmin: SupabaseClient | null = null;
+let db: Database.Database | null = null;
+const DB_PATH = path.join(app.getPath('userData'), 'ceaf_database.db');
 
 /**
  * Inicializa el cliente de Supabase con privilegios administrativos
